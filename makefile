@@ -1,5 +1,5 @@
 ifndef $(CC)
-	CC=clang
+	CC=gcc
 endif
 
 ifndef $(LD)
@@ -14,17 +14,24 @@ ifndef $(EXECCMD)
 	EXECCMD=exec
 endif
 
-CCFLAGS+=-I./src/ -Wall -g#-Wextra -Werror
-LDFLAGS+=
+CCFLAGS+=-I./src/ -fms-extensions -Wall -g -D_XOPEN_SOURCE_EXTENDED
+LDFLAGS+=-lncursesw
 
 EXEC=matrice
 BINDIR=/usr/bin
 SRCDIR=src
 
-OBJECTS=$(SRCDIR)/main.o \
-        $(SRCDIR)/matrice.o
+OBJECTS=$(SRCDIR)/main.o          \
+        $(SRCDIR)/widget/widget.o \
+        $(SRCDIR)/widget/panel.o  \
+        $(SRCDIR)/widget/label.o  \
+        $(SRCDIR)/widget/list.o   \
+        $(SRCDIR)/widget/grid.o   \
+		$(SRCDIR)/interface.o     \
+        $(SRCDIR)/matrice.o       \
+        $(SRCDIR)/misc.o
 
-all: $(EXEC)
+all: mkdir $(EXEC)
 
 $(EXEC): $(OBJECTS)
 	@printf "\tLD %s\n" bin/$(EXEC)
