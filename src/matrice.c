@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "matrice.h"
+#include "config.h"
 
 struct matrice* matrice_new(int x, int y) {
     struct matrice* st_matrice;
@@ -18,15 +19,9 @@ struct matrice* matrice_new(int x, int y) {
     /* On configure la structure. */
     st_matrice->x = x;
     st_matrice->y = y;
-    st_matrice->data = malloc(x*y*sizeof(int));
+    st_matrice->data = calloc(x*y, sizeof(int));
 
     return st_matrice;
-}
-
-void matrice_delete(struct matrice* st_matrice) {
-    /* On libère la mémoire. */
-    free(st_matrice->data);
-    free(st_matrice);
 }
 
 struct matrice* matrice_new_ptr(int x, int y, int* data) {
@@ -41,6 +36,12 @@ struct matrice* matrice_new_ptr(int x, int y, int* data) {
     memcpy(st_matrice->data, data, x*y*sizeof(int));
 
     return st_matrice;
+}
+
+void matrice_delete(struct matrice* st_matrice) {
+    /* On libère la mémoire. */
+    free(st_matrice->data);
+    free(st_matrice);
 }
 
 struct matrice* matrice_add(struct matrice* matrice_A, struct matrice* matrice_B) {
@@ -70,7 +71,6 @@ struct matrice* matrice_add(struct matrice* matrice_A, struct matrice* matrice_B
 
 struct matrice* matrice_mul(struct matrice* matrice_A, struct matrice* matrice_B) {
     int i, j, k;
-    int somme;
     struct matrice* produit;
 
     /* On s'assure que les matrices sont compatibles. */
@@ -89,7 +89,7 @@ struct matrice* matrice_mul(struct matrice* matrice_A, struct matrice* matrice_B
             produit->data[i+j*produit->x] = 0;
 
             /* On boucle pour la somme des multiplications d'une colonne à une rangée. */
-            for(somme = k = 0; k < matrice_A->x; k++)
+            for(k = 0; k < matrice_A->x; k++)
                 produit->data[i+j*produit->x] += matrice_A->data[k+j*matrice_A->x]*
                                                  matrice_B->data[i+k*matrice_B->x];
         }
@@ -152,25 +152,35 @@ struct matrice* matrice_remove_row_col(struct matrice* st_matrice, int x, int y)
 }
 
 int matrice_determinant(struct matrice* st_matrice) {
-    int i, det;
+    int a, det;
     struct matrice* sous_matrice;
 
     /* On s'assure que la matrice est carrée. */
     if(st_matrice->x != st_matrice->y)
         return 0;
 
+    /* On retourne la valeur de la matrice si sa taille est de 1. */
     if(st_matrice->x == 1)
         return st_matrice->data[0];
 
-    for(det = i = 0; i < st_matrice->x; i++) {
-        sous_matrice = matrice_remove_row_col(st_matrice, i, 0);
+    /* TODO: Il est possible d'optimiser cette algorithme énormément en faisant appel
+     *       aux propriétés du déterminant d'une matrice. Par contre, l'algorithme
+     *       implémenté est très immature. Aucune optimisation n'est esseyée, la
+     *       première ligne est toujours utilisée pour calculer le déterminant.
+     */
+    for(det = a = 0; a < st_matrice->x; a++) {
+        /* On enlève la colonne et la ligne reliées à la cellule afin de calculer
+         * le sous déterminant de la matrice.
+         */
+        sous_matrice = matrice_remove_row_col(st_matrice, a, 0);
 
-        det += st_matrice->data[i]*matrice_determinant(sous_matrice);
+        /* L'algorithme est recursif, donc on calcule le déterminant de la sous matrice. */
+        det += (a%2==0?1:-1)*st_matrice->data[a]*matrice_determinant(sous_matrice);
 
+        /* On libère la mémoire reliée à la sous matrice.*/
         matrice_delete(sous_matrice);
     }
 
-    printf("%d\n", det);
     return det;
 }
 
