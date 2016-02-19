@@ -10,9 +10,7 @@ enum direction {
 
 struct npanel {
     struct widget;
-    struct widget** child;
     enum direction type;
-    int size;
 };
 
 struct npanel* npanel_new(int size, enum direction type, int pad_x, int pad_y);

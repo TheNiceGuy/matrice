@@ -38,6 +38,32 @@ struct matrice* matrice_new_ptr(int x, int y, int* data) {
     return st_matrice;
 }
 
+struct matrice* matrice_copy(struct matrice* st_matrice) {
+    struct matrice* st_matrice_copy;
+
+    /* On alloue la mémoire à la structure. */
+    st_matrice_copy = malloc(sizeof(struct matrice));
+    if(st_matrice_copy == NULL)
+        return NULL;
+
+    /* On copie la matrice. */
+    //memcpy(st_matrice_copy, st_matrice, sizeof(struct matrice));
+    st_matrice_copy->x = st_matrice->x;
+    st_matrice_copy->y = st_matrice->y;
+
+    /* On alloue les données. */
+    st_matrice_copy->data = malloc(st_matrice->x*st_matrice->y*sizeof(int));
+    if(st_matrice_copy->data == NULL) {
+        free(st_matrice_copy);
+        return NULL;
+    }
+
+    /* On copie les données. */
+    memcpy(st_matrice_copy->data, st_matrice->data, st_matrice->x*st_matrice->y*sizeof(int));
+
+    return st_matrice_copy;
+}
+
 void matrice_delete(struct matrice* st_matrice) {
     /* On libère la mémoire. */
     free(st_matrice->data);

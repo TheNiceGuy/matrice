@@ -8,8 +8,9 @@ struct matrice {
 };
 
 struct matrice* matrice_new(int x, int y);
-void matrice_delete(struct matrice* st_matrice);
 struct matrice* matrice_new_ptr(int x, int y, int* data);
+struct matrice* matrice_copy(struct matrice* st_matrice);
+void matrice_delete(struct matrice* st_matrice);
 struct matrice* matrice_add(struct matrice* matrice_A, struct matrice* matrice_B);
 struct matrice* matrice_mul(struct matrice* matrice_A, struct matrice* matrice_B);
 struct matrice* matrice_transposition(struct matrice* st_matrice);

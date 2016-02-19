@@ -10,28 +10,10 @@
 #include "widget/list.h"
 #include "widget/label.h"
 #include "matrice.h"
+#include "buffer.h"
 #include "misc.h"
+#include "vector.h"
 #include "config.h"
-
-struct interface {
-    struct winsize taille;
-
-    struct npanel* main;
-    struct nlist* main_ls_actions;
-    struct nlabel* main_la_msg;
-
-    struct npanel* def;
-    struct npanel* def_p_name;
-    struct npanel* def_p_dim;
-    struct nlabel* def_la_name;
-    struct nlabel* def_la_name_str;
-    struct nlabel* def_la_dim;
-    struct matrice* def_mat;
-    struct matrice* def_mat_dim;
-    struct ngrid* def_g_mat;
-    struct ngrid* def_g_dim;
-
-};
 
 struct interface* interface_new() {
     struct interface* ui;
@@ -46,98 +28,232 @@ struct interface* interface_new() {
 
     /* TODO: vérifier la taille */
 
-    //ui->main = npanel_new(3, VERTICAL, 0, 0);
-    ui->main_ls_actions = nlist_new((char*[])OPERATION, 6, 0, 0);
-    //ui->main_la_msg = nlabel_new("", 0, 0);
+    ui->name = vector_new(LIST_SIZE);
+    ui->matrice = vector_new(LIST_SIZE);
 
-    ui->def = npanel_new(3, VERTICAL, 0, 0);
+    /* On crée le panel définition. */
+    ui->def_buf_name = buffer_new(10, 10);
+    ui->def = npanel_new(3, VERTICAL, 1, 1);
     ui->def_p_name = npanel_new(2, HORIZONTAL, 0, 0);
     ui->def_p_dim = npanel_new(2, HORIZONTAL, 0, 0);
     ui->def_la_name = nlabel_new("Name: ", 0, 0);
-    ui->def_la_name_str = nlabel_new("default", 0, 0);
+    ui->def_la_name_str = nlabel_new(ui->def_buf_name->data, 0, 0);
     ui->def_la_dim = nlabel_new("Dimensions: ", 0, 0);
-    ui->def_mat = matrice_new(UI_NEW_MATRIX_X, UI_NEW_MATRIX_Y);
-    ui->def_mat_dim = matrice_new_ptr(2, 1, (int[]){UI_NEW_MATRIX_X, UI_NEW_MATRIX_Y});
-    ui->def_g_mat = ngrid_new(ui->def_mat, "%3d", 0, 0);
-    ui->def_g_dim = ngrid_new(ui->def_mat_dim, "%1d", 0, 0);
+    ui->def_g_dim = ngrid_new_ptr(2, 1, (int[]){UI_MAT_X, UI_MAT_Y}, FALSE, "%1d", 0, 0);
+    ui->def_g_mat = ngrid_new(UI_MAT_X, UI_MAT_Y, TRUE, "%3d", 0, 0);
 
+nlabel_change_string(ui->def_la_dim, "TOP FUCKING KEK");
+
+    /* On lie les élèments du panel définition. */
     npanel_set_child(ui->def_p_name, (struct widget*)ui->def_la_name, 0);
     npanel_set_child(ui->def_p_name, (struct widget*)ui->def_la_name_str, 1);
-    npanel_resize(ui->def_p_name);
-
     npanel_set_child(ui->def_p_dim, (struct widget*)ui->def_la_dim, 0);
     npanel_set_child(ui->def_p_dim, (struct widget*)ui->def_g_dim, 1);
-    npanel_resize(ui->def_p_dim);
-
     npanel_set_child(ui->def, (struct widget*)ui->def_p_name, 0);
     npanel_set_child(ui->def, (struct widget*)ui->def_p_dim, 1);
     npanel_set_child(ui->def, (struct widget*)ui->def_g_mat, 2);
-    npanel_resize(ui->def);
 
-    printf("%p\n", ui->def->window);
-    printf("%p\n", ui->def_p_name->window);
-    printf("%p\n", ui->def_p_dim->window);
-    printf("%p\n", ui->def_la_name->window);
-    printf("%p\n", ui->def_la_name_str->window);
-    printf("%p\n", ui->def_la_dim->window);
-    printf("%p\n", ui->def_g_mat->window);
-    printf("%p\n", ui->def_g_dim->window);
+    /* On crée le panel principal. */
+    ui->main = npanel_new(3, VERTICAL, 0, 0);
+    ui->main_ls_actions = nlist_new((char*[])OPERATION, 6, 0, 0);
+    ui->main_la_msg = nlabel_new("asdasdasd", 0, 0);
 
-    refresh();
+    /* On lie les élèments du panel principal. */
+    npanel_set_child(ui->main, (struct widget*)ui->main_ls_actions, 0);
+    npanel_set_child(ui->main, (struct widget*)ui->def, 1);
+    npanel_set_child(ui->main, (struct widget*)ui->main_la_msg, 2);
+    npanel_resize(ui->main);
 
-    //nlist_draw();
-    npanel_draw(ui->def);
-
+    keypad(ui->main_ls_actions->window, TRUE);
+    keypad(ui->def_la_name_str->window, TRUE);
+    keypad(ui->def_g_dim->window, TRUE);
+    curs_set(0);
 
     return ui;
-
-    /* On active les touches pour les fenêtres. */
-    //keypad(operation, TRUE);
-    //keypad(modification, TRUE);
 }
 
 void interface_delete(struct interface* ui) {
-    npanel_delete(ui->def);
-    matrice_delete(ui->def_mat);
-    matrice_delete(ui->def_mat_dim);
+    int i;
+
+    for(i = 0; i < ui->name->current; i++) {
+        free(vector_get_pointer(ui->name, i));
+        matrice_delete(vector_get_pointer(ui->matrice, i));
+    }
+    vector_delete(ui->name);
+    vector_delete(ui->matrice);
+
+    npanel_delete(ui->main);
+    buffer_delete(ui->def_buf_name);
     free(ui);
 }
 
 void interface_main(struct interface* ui) {
-    refresh();
-    /*npanel_resize(ui->p_main);
-    npanel_draw(ui->p_main);*/
+    int key;
 
-    getch();
+    nlist_sel_change(ui->main_ls_actions, 0);
+
+    do {
+        npanel_resize(ui->main);
+        npanel_draw(ui->main);
+
+        key = wgetch(ui->main_ls_actions->window);
+        switch(key) {
+            case KEY_UP:
+                nlist_sel_dec(ui->main_ls_actions);
+                break;
+            case KEY_DOWN:
+                nlist_sel_inc(ui->main_ls_actions);
+                break;
+            case 10:
+                if(ui->main_ls_actions->sel == ACTION_QUIT)
+                    goto QUIT;
+
+                interface_choisir(ui, ui->main_ls_actions->sel);
+
+                break;
+        }
+    } while(TRUE);
+
+QUIT:
+    return;
+}
+
+void interface_choisir(struct interface* ui, int index) {
+    switch(index) {
+        case ACTION_DEFINE:
+            nlist_sel_change(ui->main_ls_actions, -1);
+            interface_def_name(ui);
+            interface_grid_dim(ui, ui->def_g_dim);
+            interface_grid(ui, ui->def_g_mat);
+
+            vector_push_pointer(ui->name, buffer_get_string(ui->def_buf_name));
+            vector_push_pointer(ui->matrice, matrice_copy(ui->def_g_mat->st_matrice));
+
+            nlist_sel_change(ui->main_ls_actions, 0);
+            break;
+        case ACTION_ADD:
+
+            break;
+        case ACTION_MUL:
+
+            break;
+        case ACTION_TRANS:
+
+            break;
+        case ACTION_DET:
+
+            break;
+        case ACTION_QUIT:
+            break;
+    }
+}
+
+void interface_def_name(struct interface* ui) {
+    int key;
+
+    do {
+        npanel_resize(ui->main);
+        npanel_draw(ui->main);
+
+        key = wgetch(ui->def_la_name_str->window);
+        switch(key) {
+            case KEY_BACKSPACE:
+            case KEY_DC:
+            case 127:
+                buffer_backspace(ui->def_buf_name);
+                nlabel_change_string(ui->def_la_name_str, ui->def_buf_name->data);
+                break;
+            case '_':
+            case '0' ... '9':
+            case 'a' ... 'z':
+            case 'A' ... 'Z':
+                buffer_append_char(ui->def_buf_name, key);
+                nlabel_change_string(ui->def_la_name_str, ui->def_buf_name->data);
+                break;
+            case KEY_ENTER:
+            case 10:
+                return;
+        }
+    } while(TRUE);
+}
+
+void interface_grid(struct interface* ui, struct ngrid* st_ngrid) {
+    int key;
+
+    keypad(st_ngrid->window, TRUE);
+    ngrid_sel_change(st_ngrid, 0, 0);
+
+    do {
+        npanel_resize(ui->main);
+        npanel_draw(ui->main);
+
+        key = wgetch(st_ngrid->window);
+        switch(key) {
+            case KEY_UP:
+                ngrid_sel_dec_y(st_ngrid);
+                break;
+            case KEY_DOWN:
+                ngrid_sel_inc_y(st_ngrid);
+                break;
+            case KEY_LEFT:
+                ngrid_sel_dec_x(st_ngrid);
+                break;
+            case KEY_RIGHT:
+                ngrid_sel_inc_x(st_ngrid);
+                break;
+            case '-':
+            case '0' ... '9':
+                ngrid_cat(st_ngrid, key);
+                break;
+            case KEY_ENTER:
+            case 10:
+                ngrid_sel_change(st_ngrid,-1,-1);
+                return;
+        }
+    } while(TRUE);
+}
+
+void interface_grid_dim(struct interface* ui, struct ngrid* st_ngrid) {
+    int key;
+
+    keypad(st_ngrid->window, TRUE);
+    ngrid_sel_change(st_ngrid, 0, 0);
+
+    do {
+        npanel_resize(ui->main);
+        npanel_draw(ui->main);
+
+        key = wgetch(st_ngrid->window);
+        switch(key) {
+            case KEY_UP:
+                ngrid_sel_dec_y(st_ngrid);
+                break;
+            case KEY_DOWN:
+                ngrid_sel_inc_y(st_ngrid);
+                break;
+            case KEY_LEFT:
+                ngrid_sel_dec_x(st_ngrid);
+                break;
+            case KEY_RIGHT:
+                ngrid_sel_inc_x(st_ngrid);
+                break;
+            case '0' ... '9':
+                ngrid_cat(st_ngrid, key);
+                if(ngrid_get(st_ngrid) == 0)
+                    ngrid_set(st_ngrid, 1);
+
+                ngrid_change(ui->def_g_mat, ui->def_g_dim->st_matrice->data[0],
+                                            ui->def_g_dim->st_matrice->data[1]);
+                break;
+            case KEY_ENTER:
+            case 10:
+                ngrid_sel_change(st_ngrid,-1,-1);
+                return;
+        }
+    } while(TRUE);
 }
 
 #if 0
-void interface_main() {
-    int sel;
-
-    do {
-        sel = interface_choisir();
-        switch(sel) {
-            case ACTION_DEFINE:
-                interface_define_matrice();
-                break;
-            case ACTION_ADD:
-
-                break;
-            case ACTION_MUL:
-
-                break;
-            case ACTION_TRANS:
-
-                break;
-            case ACTION_DET:
-
-                break;
-            case ACTION_QUIT:
-                break;
-        }
-    } while(sel != ACTION_QUIT);
-}
 
 int interface_choisir() {
     int boucle = TRUE;

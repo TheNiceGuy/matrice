@@ -33,10 +33,11 @@
 #define ACTION_DET    4
 #define ACTION_QUIT   5
 
-#define UI_NEW_MATRIX_X 2
-#define UI_NEW_MATRIX_Y 2
+#define UI_MAT_X 9
+#define UI_MAT_Y 9
 
-#define BUFFER_SIZE 50
+#define BUFFER_SIZE 30
 #define MAX_SIZE 99
+#define LIST_SIZE 10
 
 #endif

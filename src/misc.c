@@ -18,6 +18,14 @@ int concatenate_int(int a, int b) {
     return a * pow + b;
 }
 
+int format_len(char* format) {
+    char buffer[BUFFER_SIZE];
+
+    snprintf(buffer, BUFFER_SIZE, format, 0);
+
+    return strlen(buffer);
+}
+
 void wprint_center(WINDOW* window, char* string) {
     wcenter(window, string);
     wprintw(window, "%s\n", string);
@@ -43,4 +51,12 @@ void wnewline(WINDOW* window) {
         return;
 
     wmove(window, y+1, 0);
+}
+
+void wmoverel(WINDOW* window, int x, int y) {
+    int n_x;
+    int n_y;
+
+    getyx(window, n_y, n_x);
+    wmove(window, n_y+y, n_x+x);
 }

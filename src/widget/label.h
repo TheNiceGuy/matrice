@@ -14,5 +14,6 @@ void nlabel_delete(struct nlabel* st_nlabel);
 void nlabel_resize(struct nlabel* st_nlabel);
 void nlabel_move(struct nlabel* st_nlabel, int x, int y);
 void nlabel_draw(struct nlabel* st_nlabel);
+void nlabel_change_string(struct nlabel* st_nlabel, char* string);
 
 #endif

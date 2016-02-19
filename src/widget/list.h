@@ -15,5 +15,8 @@ void nlist_delete(struct nlist* st_nlist);
 void nlist_resize(struct nlist* st_nlist);
 void nlist_move(struct nlist* st_nlist, int x, int y);
 void nlist_draw(struct nlist* st_nlist);
+void nlist_sel_change(struct nlist* st_nlist, int sel);
+int nlist_sel_inc(struct nlist* st_nlist);
+int nlist_sel_dec(struct nlist* st_nlist);
 
 #endif
