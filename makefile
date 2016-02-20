@@ -14,24 +14,15 @@ ifndef $(EXECCMD)
 	EXECCMD=exec
 endif
 
-CCFLAGS+=-I./src/ -fms-extensions -g -Wall -D_XOPEN_SOURCE_EXTENDED
-LDFLAGS+=-lncursesw -lm
+CCFLAGS+=-I./src/ -g -Wall -D__LINUX__
+LDFLAGS+=
 
 EXEC=matrice
 BINDIR=/usr/bin
 SRCDIR=src
 
-OBJECTS=$(SRCDIR)/main.o          \
-        $(SRCDIR)/buffer.o        \
-        $(SRCDIR)/widget/widget.o \
-        $(SRCDIR)/widget/panel.o  \
-        $(SRCDIR)/widget/label.o  \
-        $(SRCDIR)/widget/list.o   \
-        $(SRCDIR)/widget/grid.o   \
-        $(SRCDIR)/interface.o     \
-        $(SRCDIR)/matrice.o       \
-		$(SRCDIR)/vector.o       \
-        $(SRCDIR)/misc.o
+OBJECTS=$(SRCDIR)/main.o     \
+        $(SRCDIR)/matrice.o
 
 all: mkdir $(EXEC)
 
